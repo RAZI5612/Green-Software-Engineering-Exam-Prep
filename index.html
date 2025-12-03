@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Green Software Challenge</title>
+    <style>
+        :root {
+            --bg-color: #0d1117;
+            --card-bg: #161b22;
+            --text-color: #c9d1d9;
+            --green: #238636;
+            --red: #da3633;
+            --accent: #58a6ff;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+        .quiz-container {
+            background-color: var(--card-bg);
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            width: 100%;
+            max-width: 600px;
+            padding: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #30363d;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        .progress {
+            font-size: 0.9em;
+            color: #8b949e;
+        }
+        .score-board {
+            font-weight: bold;
+            color: var(--green);
+        }
+        h2 { margin: 0 0 15px 0; font-size: 1.2em; }
+        .options { display: flex; flex-direction: column; gap: 10px; }
+        .btn {
+            background-color: #21262d;
+            border: 1px solid #30363d;
+            color: var(--text-color);
+            padding: 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            text-align: left;
+            transition: all 0.2s;
+            font-size: 1em;
+        }
+        .btn:hover:not([disabled]) { background-color: #30363d; }
+        .btn.correct { background-color: rgba(35, 134, 54, 0.2); border-color: var(--green); color: #46c45e; }
+        .btn.wrong { background-color: rgba(218, 54, 51, 0.2); border-color: var(--red); color: #f85149; }
+        
+        .feedback {
+            margin-top: 15px;
+            padding: 15px;
+            background-color: #1f2428;
+            border-radius: 6px;
+            display: none;
+            border-left: 4px solid var(--accent);
+        }
+        .next-btn {
+            margin-top: 15px;
+            background-color: var(--green);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            width: 100%;
+            display: none;
+        }
+        .next-btn:hover { background-color: #2ea043; }
+        .results { text-align: center; display: none; }
+    </style>
+</head>
+<body>
+
+<div class="quiz-container" id="quiz-box">
+    <div class="header">
+        <span class="progress" id="progress">Question 1/40</span>
+        <span class="score-board" id="score">Score: 0</span>
+    </div>
+    <h2 id="question-text">Loading...</h2>
+    <div class="options" id="options-box"></div>
+    <div class="feedback" id="feedback-box"></div>
+    <button class="next-btn" id="next-btn" onclick="nextQuestion()">Next Question</button>
+</div>
+
+<div class="quiz-container results" id="result-box">
+    <h1>Quiz Completed! 🎉</h1>
+    <p>Your Final Score:</p>
+    <h2 style="font-size: 3em; color: var(--green);" id="final-score"></h2>
+    <p id="final-message"></p>
+    <button class="next-btn" style="display:block" onclick="location.reload()">Try Again</button>
+</div>
+
+<script>
+    const questions = [
+        { q: "What is the primary goal of Sustainable Software Engineering?", options: ["Write faster code", "Minimize carbon emissions", "Reduce cloud costs", "Extend battery life"], a: 1, info: "The core definition focuses on reducing the environmental impact (carbon)." },
+        { q: "Which gas is the standard unit (CO2e) based on?", options: ["Methane", "Nitrous Oxide", "Carbon Dioxide", "Ozone"], a: 2, info: "CO2 is the reference gas. All others are converted to CO2e." },
+        { q: "What is 'Greenwashing'?", options: ["Cleaning servers with water", "Refactoring dirty code", "Misleading marketing about green benefits", "Using renewable energy"], a: 2, info: "It is deceptive marketing to look green without doing the work." },
+        { q: "Which Triple Bottom Line pillar focuses on Profit?", options: ["Environmental", "Social", "Economic", "Technical"], a: 2, info: "People (Social), Planet (Environmental), Profit (Economic)." },
+        { q: "What does 'Carbon Intensity' measure?", options: ["How dirty the grid electricity is", "Weight of the hardware", "CPU temperature", "Lines of code"], a: 0, info: "It changes based on the energy source (Coal = High, Wind = Low)." },
+        { q: "What is 'Embodied Carbon'?", options: ["Emissions from running code", "Emissions from manufacturing hardware", "Carbon inside the case", "Saved carbon"], a: 1, info: "It is the carbon cost of building the device." },
+        { q: "Which strategy reduces Embodied Carbon?", options: ["Optimizing loops", "Using older hardware longer", "Compressing data", "Moving to green region"], a: 1, info: "Extending lifespan delays the need to manufacture new devices." },
+        { q: "What is 'Energy Proportionality'?", options: ["Proportional fonts", "Energy scales with work done (0% work = 0 watts)", "Balancing wind/solar", "Equal power for all users"], a: 1, info: "Ideally, computers should use zero power when doing zero work." },
+        { q: "Why is 'Static Power' a problem?", options: ["Causes shocks", "Consumes power when idle", "Interferes with WiFi", "Cannot be measured"], a: 1, info: "Servers draw power just to stay on." },
+        { q: "What implies 'Demand Shaping'?", options: ["Running tasks at 3 AM", "Moving tasks to Norway", "Reducing video quality to save energy", "Buying more servers"], a: 2, info: "Shaping alters the features/quality. Shifting alters time/place." },
+        { q: "What is 'Spatial Shifting'?", options: ["Moving workloads to cleaner locations", "Moving workloads to later times", "Compressing files", "Using smaller variables"], a: 0, info: "Spatial = Location (e.g., moving to a hydro-powered region)." },
+        { q: "Which metric measures software sustainability?", options: ["FPS", "SCI (Software Carbon Intensity)", "KPI", "ROI"], a: 1, info: "SCI is the standard ISO metric." },
+        { q: "Why use StringBuilder in loops?", options: ["Thread safety", "Avoids creating temporary objects", "Auto-compression", "Uses GPU"], a: 1, info: "String is immutable; '+' creates garbage. StringBuilder recycles." },
+        { q: "Which Big-O is LEAST energy efficient?", options: ["O(1)", "O(log n)", "O(n)", "O(n^2)"], a: 3, info: "Nested loops (n^2) consume massive CPU cycles." },
+        { q: "How to reduce network energy?", options: ["Send uncompressed JSON", "Minify JS/CSS", "Use high-res images", "Poll frequently"], a: 1, info: "Smaller files = less transmission energy." },
+        { q: "What is 'Dead Code'?", options: ["Crashes app", "Written but never used", "Old language", "Syntax error"], a: 1, info: "It wastes storage and compile time." },
+        { q: "Most efficient Java primitive for counters?", options: ["long", "int", "BigInteger", "Double"], a: 1, info: "int (32-bit) fits standard registers efficiently." },
+        { q: "Benefit of Serverless computing?", options: ["No servers used", "No idle power waste", "Generates solar", "Less code"], a: 1, info: "No idle servers waiting for requests." },
+        { q: "What is 'Virtualization'?", options: ["Running multiple VMs on one server", "Video games", "Simulating carbon", "VR headsets"], a: 0, info: "Maximizes hardware utilization." },
+        { q: "Most memory efficient fixed list?", options: ["ArrayList", "LinkedList", "Array (int[])", "HashMap"], a: 2, info: "Arrays have no object overhead." },
+        { q: "What is 'GreenOps'?", options: ["Military ops", "DevOps + Sustainability", "Green OS", "Recycling paper"], a: 1, info: "Measuring carbon in CI/CD." },
+        { q: "What is 'Hoisting'?", options: ["Lifting computer", "Moving constants out of loops", "Increasing counter", "Deleting loop"], a: 1, info: "Don't calculate constants 1000 times." },
+        { q: "Why is Polling bad?", options: ["User interaction", "Prevents CPU sleep", "Hard to code", "Memory usage"], a: 1, info: "Busy waiting wastes energy." },
+        { q: "Green alternative to Polling?", options: ["Faster Polling", "Event-Driven / Interrupts", "Manual check", "Infinite loops"], a: 1, info: "Wake up only when needed." },
+        { q: "Best web image format?", options: ["BMP", "WebP", "TIFF", "RAW"], a: 1, info: "WebP has superior compression." },
+        { q: "Impact of Memory Leak?", options: ["Toxic chemicals", "High GC usage & RAM waste", "Lighter computer", "Reduced carbon"], a: 1, info: "Wasted RAM forces the CPU to work harder." },
+        { q: "Dark Mode benefit on OLED?", options: ["Looks cool", "Black pixels use 0 energy", "Less network", "Faster compile"], a: 1, info: "No light = No power." },
+        { q: "Most sustainable testing?", options: ["Full regression always", "Targeted / Impact Analysis", "No testing", "Manual only"], a: 1, info: "Test only what changed." },
+        { q: "Purpose of Caching?", options: ["Hide data", "Avoid re-fetching/re-calculating", "Clear memory", "Encrypt data"], a: 1, info: "Saves network and CPU." },
+        { q: "Java keyword to exit loop early?", options: ["continue", "break", "pass", "next"], a: 1, info: "Stop processing once the job is done." },
+        { q: "Edge Computing benefit?", options: ["Sharp computers", "Reduces transmission distance", "Centralizes data", "Uses old hardware"], a: 1, info: "Less distance = Less network energy." },
+        { q: "Handling large datasets?", options: ["Load all to RAM", "Stream / Pagination", "Print to console", "Convert to String"], a: 1, info: "Process in chunks to save RAM." },
+        { q: "Example of Operational Carbon?", options: ["Cooling fans electricity", "Metal in rack", "Shipping fuel", "Keyboard plastic"], a: 0, info: "Energy used during operation." },
+        { q: "Why close FileInputStreams?", options: ["Security", "Release OS resources", "Delete file", "Compile code"], a: 1, info: "Prevent memory leaks." },
+        { q: "In SCI equation, what is 'I'?", options: ["Internet", "Carbon Intensity", "Current", "Integer"], a: 1, info: "Intensity of the energy source." },
+        { q: "Green SDLC focus?", options: ["Checkpoints at every stage", "Green office", "Vegetarian staff", "Recycled paper"], a: 0, info: "Sustainability is continuous." },
+        { q: "Efficient Java logic?", options: ["Short-circuit (&&)", "Bitwise (&)", "Same", "Ternary"], a: 0, info: "Skips second check if first fails." },
+        { q: "Benefit of removing Bloatware?", options: ["Empty UI", "Reduced background CPU/RAM", "Higher intensity", "Blocks apps"], a: 1, info: "Less junk running = Less energy." },
+        { q: "Best Cloud Region?", options: ["Closest", "Lowest Carbon Intensity", "Cheapest", "Biggest"], a: 1, info: "Clean energy matters most." },
+        { q: "Why no System.out.println in loops?", options: ["Ink cost", "Heavy I/O operations", "Code length", "Deprecated"], a: 1, info: "I/O is 1000x slower than CPU." }
+    ];
+
+    let currentQuestion = 0;
+    let score = 0;
+    const total = questions.length;
+
+    const quizBox = document.getElementById("quiz-box");
+    const resultBox = document.getElementById("result-box");
+    const questionText = document.getElementById("question-text");
+    const optionsBox = document.getElementById("options-box");
+    const nextBtn = document.getElementById("next-btn");
+    const progressText = document.getElementById("progress");
+    const scoreText = document.getElementById("score");
+    const feedbackBox = document.getElementById("feedback-box");
+
+    function loadQuestion() {
+        const q = questions[currentQuestion];
+        questionText.innerText = q.q;
+        progressText.innerText = `Question ${currentQuestion + 1}/${total}`;
+        optionsBox.innerHTML = "";
+        feedbackBox.style.display = "none";
+        nextBtn.style.display = "none";
+
+        q.options.forEach((opt, index) => {
+            const btn = document.createElement("button");
+            btn.className = "btn";
+            btn.innerText = opt;
+            btn.onclick = () => checkAnswer(index, btn);
+            optionsBox.appendChild(btn);
+        });
+    }
+
+    function checkAnswer(selected, btn) {
+        const q = questions[currentQuestion];
+        const buttons = optionsBox.getElementsByClassName("btn");
+        
+        // Disable all buttons
+        for (let b of buttons) { b.disabled = true; }
+
+        if (selected === q.a) {
+            btn.classList.add("correct");
+            score++;
+            scoreText.innerText = `Score: ${score}`;
+            feedbackBox.innerHTML = `<b>Correct!</b><br>${q.info}`;
+        } else {
+            btn.classList.add("wrong");
+            buttons[q.a].classList.add("correct");
+            feedbackBox.innerHTML = `<b>Wrong.</b><br>${q.info}`;
+        }
+        
+        feedbackBox.style.display = "block";
+        nextBtn.style.display = "block";
+    }
+
+    function nextQuestion() {
+        currentQuestion++;
+        if (currentQuestion < total) {
+            loadQuestion();
+        } else {
+            showResults();
+        }
+    }
+
+    function showResults() {
+        quizBox.style.display = "none";
+        resultBox.style.display = "block";
+        document.getElementById("final-score").innerText = `${score} / ${total}`;
+        
+        const msg = document.getElementById("final-message");
+        if (score === total) msg.innerText = "🏆 Perfect Green Coder!";
+        else if (score > 30) msg.innerText = "🌿 Expert Sustainable Engineer!";
+        else if (score > 20) msg.innerText = "🌱 Good Start, Keep Learning!";
+        else msg.innerText = "🍂 Needs Revision. Try Again!";
+    }
+
+    // Start
+    loadQuestion();
+</script>
+
+</body>
+</html>
